@@ -32,5 +32,42 @@ public class AdminManager {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return admins;
+    }
+
+    public static Admin findAdmin(int id){
+        try(Connection conn =dbManager.getConnection()){
+            String query ="SELECT*FROM admins WHERE id=?";
+            PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setInt(1,id);
+
+            ResultSet rs= stmt.executeQuery();
+            if(rs.next()){
+                String name = rs.getString("name");
+                int age =rs.getInt("age");
+                String mail=rs.getString("mail");
+                String password =rs.getString("password");
+
+                return new Admin(id,name,age,mail,password);
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        return null;
+    }
+    public static Admin addAdmin(int id,String name,int age,String mail,String password){
+        try(Connection conn= dbConenction.getConnection()){
+            String query ="INSERT INTO admin(id,name,age,mail,password) VALUES(?,?,?,?,?)";
+            PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setInt(1,id);
+            stmt.setString(2,name);
+            stmt.setInt(3,age);
+            stmt.setString(4,mail);
+            stmt.setString(5,password);
+
+            stmt.executeUpdate();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
     }
 }
