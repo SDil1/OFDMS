@@ -10,10 +10,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class AdminManager {
-    public static ArrayList<Admin>=
-
-    getAdmins() {
-        ArrayList<Admin> admins = new ArrayList<>();
+    public static ArrayList<Admin>getAdmins(){
+        ArrayList<Admin> admins= new ArrayList<>();
 
         try (Connection conn = dbManager.getConnection()) {
             String query = "SELECT*FROM admins";
@@ -57,10 +55,9 @@ public class AdminManager {
         }
         return null;
     }
-
-    public static void addAdmin(int id, String name, int age, String mail, String password) {
-        try (Connection conn = dbConenction.getConnection()) {
-            String query = "INSERT INTO admin(id,name,age,mail,password) VALUES(?,?,?,?,?)";
+    public static Admin addAdmin(int id,String name,int age,String mail,String password){
+        try(Connection conn= dbManager.getConnection()){
+            String query ="INSERT INTO admin(id,name,age,mail,password) VALUES(?,?,?,?,?)";
             PreparedStatement stmt = conn.prepareStatement(query);
             stmt.setInt(1, id);
             stmt.setString(2, name);
@@ -75,7 +72,7 @@ public class AdminManager {
     }
 
     public static void removeAdmin(int id) {
-        try(Connection conn =dbManager.connection()){
+        try(Connection conn =dbManager.getConnection()){
             String query = "DELETE FROM admins WHERE id=?";
             PreparedStatement stmt=conn.prepareStatement(query);
             stmt.executeUpdate();
@@ -85,7 +82,7 @@ public class AdminManager {
     }
 
     public static void updateAdmin(int id, String name, int age, String mail, String password) {
-        try(Connection conn=dbManager.getConnection){
+        try(Connection conn=dbManager.getConnection()){
             String query ="UPDATE admin SET name=?,age=?,mail=?,password=? WHERE id=?";
             PreparedStatement stmt= conn.prepareStatement(query);
             stmt.setString(1,name);
@@ -99,23 +96,24 @@ public class AdminManager {
             e.printStackTrace();
         }
 
-        public static int getNextID(){
-            int maxID = 0;
 
-            try(Connection conn =dbManager.getConnection()){
-                String query = "SELECT MAX(id) AS max_id FROM admins";
-                PreparedStatement stmt= conn.prepareStatement(query);
-                ResultSet rs=stmt.executeQuery();
+    }
+    public static int getNextID(){
+        int maxID = 0;
 
-                if(rs.next()){
-                    maxID=rs.getInt("max_id");
-                }
+        try(Connection conn =dbManager.getConnection()){
+            String query = "SELECT MAX(id) AS max_id FROM admins";
+            PreparedStatement stmt= conn.prepareStatement(query);
+            ResultSet rs=stmt.executeQuery();
 
-            }catch (Exception e){
-                e.printStackTrace();
+            if(rs.next()){
+                maxID=rs.getInt("max_id");
             }
-            return maxID+1;
+
+        }catch (Exception e){
+            e.printStackTrace();
         }
+        return maxID+1;
     }
 
 }
