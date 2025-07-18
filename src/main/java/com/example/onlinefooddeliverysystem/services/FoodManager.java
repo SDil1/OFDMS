@@ -1,61 +1,87 @@
 package com.example.onlinefooddeliverysystem.services;
 import com.example.onlinefooddeliverysystem.models.Food;
-import com.example.onlinefooddeliverysystem.util.fileHandler;
+import com.example.onlinefooddeliverysystem.util.dbManager;
+import java.sql.*;
 import java.util.ArrayList;
 
 public class FoodManager {
     private static ArrayList<Food> foodItems = null;
-    private static final String fileName = "food_items.txt";
-    private static int foodID = 0;
 
     public static void readFoodItems() {
-        if (foodItems != null)
-            return;
+        if (foodItems != null) return;
 
         foodItems = new ArrayList<>();
 
-        String[] foodDataArr = fileHandler.readFromFile(fileName);
-        int lastID = 0;
+        try (Connection conn = dbManager.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM food")) {
 
-        for (String foodData : foodDataArr) {
-            String[] item = foodData.split(",");
-            lastID = Integer.parseInt(item[0]);
-            String name = item[1];
-            String description = item[2];
-            double price = Double.parseDouble(item[3]);
-            String category = item[4];
-            String imagePath = item[5];
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+                String description = rs.getString("description");
+                double price = rs.getDouble("price");
+                String category = rs.getString("category");
+                String imagePath = rs.getString("imagePath");
 
-            foodItems.add(new Food(lastID ,name ,description, price, category, imagePath));
+                foodItems.add(new Food(id, name, description, price, category, imagePath));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-
-        foodID = lastID;
     }
 
-    public static void add(int id, String name, String description, double price,String category, String imagePath) {
-        Food food = new Food(id, name ,description,price,category, imagePath);
-        foodItems.add(food);
-        fileHandler.writeToFile(fileName, true, food.getDetails());
+    public static void add(int id, String name, String description, double price, String category, String imagePath) {
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "INSERT INTO food (id, name, description, price, category, imagePath) VALUES (?, ?, ?, ?, ?, ?)")) {
+
+            ps.setInt(1, id);
+            ps.setString(2, name);
+            ps.setString(3, description);
+            ps.setDouble(4, price);
+            ps.setString(5, category);
+            ps.setString(6, imagePath);
+            ps.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
-    public static void update(int id, String name, String description, double price,String category, String imagePath) {
-        Food food = find(id);
-        if (food != null) {
-            food.setName(name);
-            food.setDescription(description);
-            food.setPrice(price);
-            food.setCategory(category);
-            food.setImagePath(imagePath);
+    public static void update(int id, String name, String description, double price, String category, String imagePath) {
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "UPDATE food SET name = ?, description = ?, price = ?, category = ?, imagePath = ? WHERE id = ?")) {
+
+            ps.setString(1, name);
+            ps.setString(2, description);
+            ps.setDouble(3, price);
+            ps.setString(4, category);
+            ps.setString(5, imagePath);
+            ps.setInt(6, id);
+            ps.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-        saveFoodItemsToFile();
     }
 
     public static void remove(int id) {
-        foodItems.remove(find(id));
-        saveFoodItemsToFile();
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement("DELETE FROM food WHERE id = ?")) {
+
+            ps.setInt(1, id);
+            ps.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public static Food find(int id) {
+        readFoodItems();
+
         for (Food food : foodItems) {
             if (food.getID() == id) {
                 return food;
@@ -64,29 +90,30 @@ public class FoodManager {
         return null;
     }
 
-    public static void view() {
-        for (Food food : foodItems) {
-            if (food.getID() != 0) {
-                System.out.println("ID: " + food.getID() + " | Name: " + food.getName() + " | Price: Rs. " + food.getPrice());
-            }
-        }
+    public static ArrayList<Food> view() {
+        readFoodItems();
+        return foodItems;
     }
 
-    public static void saveFoodItemsToFile() {
-        String data = "";
-        for (Food food : foodItems) {
-            if (food.getID() != 0) {
-                data += food.getDetails();
-            }
-        }
-        fileHandler.writeToFile(fileName, false, data);
+
+    public static ArrayList<Food> getFoodItems() {
+        readFoodItems();
+        return foodItems;
     }
 
     public static int getNextID() {
-        return ++foodID;
-    }
+        int nextID = 1;
+        try (Connection conn = dbManager.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT MAX(id) AS max_id FROM food")) {
 
-    public static ArrayList<Food> getFoodItems() {
-        return foodItems;
+            if (rs.next()) {
+                nextID = rs.getInt("max_id") + 1;
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return nextID;
     }
 }

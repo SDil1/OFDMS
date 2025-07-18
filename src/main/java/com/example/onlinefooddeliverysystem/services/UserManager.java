@@ -1,95 +1,109 @@
 package com.example.onlinefooddeliverysystem.services;
 import com.example.onlinefooddeliverysystem.models.User;
-import com.example.onlinefooddeliverysystem.util.fileHandler;
+import com.example.onlinefooddeliverysystem.util.dbManager;
+import java.sql.*;
 import java.util.ArrayList;
 
 public class UserManager {
     private static ArrayList<User> users = null;
-    private static final String fileName = "users.txt";
     private static int ID = 0;
 
-    // Read users from file and load into the list
+    // Load users from database into list
     public static void readUsers() {
-        if (users != null)
-            return;
+        if (users != null) return;
 
         users = new ArrayList<>();
+        users.add(new User(0, "user", 10, "123", "user@gmail.com")); // default user
 
-        // Add a default admin user
-        users.add(new User(0, "user", 10, "123", "user@gmail.com"));
+        try (Connection con = dbManager.getConnection();
+             Statement stmt = con.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM users")) {
 
-        String[] usersDataArr = fileHandler.readFromFile(fileName);
-        int userID = 0;
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+                int age = rs.getInt("age");
+                String password = rs.getString("password");
+                String mail = rs.getString("mail");
 
-        for (String userData : usersDataArr) {
-            String[] userDataArr = userData.split(",");
-            userID = Integer.parseInt(userDataArr[0]);
-            String name = userDataArr[1];
-            int age = Integer.parseInt(userDataArr[2]);
-            String password = userDataArr[3];
-            String mail = userDataArr[4];
+                users.add(new User(id, name, age, password, mail));
+                ID = id;
+            }
 
-            User user = new User(userID, name, age, password, mail);
-            users.add(user);
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-
-        ID = userID;
     }
 
-    // Find user by ID
+    // Add new user to list and DB
+    public static void registerUser(String name, int age, String password, String mail) {
+        int id = getNextID();
+        User user = new User(id, name, age, password, mail);
+        users.add(user);
+
+        try (Connection con = dbManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "INSERT INTO users (id, name, age, password, mail) VALUES (?, ?, ?, ?, ?)")) {
+
+            ps.setInt(1, id);
+            ps.setString(2, name);
+            ps.setInt(3, age);
+            ps.setString(4, password);
+            ps.setString(5, mail);
+            ps.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Find user by ID in the list
     public static User findUser(int id) {
         for (User user : users) {
-            if (user.getID() == id) {
-                return user;
-            }
+            if (user.getID() == id) return user;
         }
         return null;
     }
 
-    // Register new user
-    public static void registerUser(String name,int age, String password, String mail) {
-        User user = new User(getNextID(), name, age, password , mail);
-        users.add(user);
-        fileHandler.writeToFile(fileName, true, user.getDetails());
-    }
-
-    // Login functionality (simple check for email and password)
+    // Simple login check by email and password
     public static User loginUser(String mail, String password) {
         for (User user : users) {
-            if (user.getMail().equals(mail) && user.getPassword().equals(password)) {
-                return user;
+            if (user.getMail().equals(mail) && user.getPassword().equals(password)) return user;
+        }
+        return null;
+    }
+
+    // Return user profile by ID
+    public static User viewProfile(int id) {
+        return findUser(id);
+    }
+
+    // Delete user from list and DB
+    public static void deleteUser(int id) {
+        User toDelete = findUser(id);
+        if (toDelete != null) {
+            users.remove(toDelete);
+
+            try (Connection con = dbManager.getConnection();
+                 PreparedStatement ps = con.prepareStatement("DELETE FROM users WHERE id = ?")) {
+
+                ps.setInt(1, id);
+                ps.executeUpdate();
+
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
         }
-        return null; // Return null if no matching user is found
     }
 
-    // View profile
-    public static User viewProfile(int id) {
-        return findUser(id); // Just return the user object by ID
-    }
-
-    // Delete user
-    public static void deleteUser(int id) {
-        users.remove(findUser(id));
-        saveUsersToFile();
-    }
-
-    // Save all users to file after any modification
-    public static void saveUsersToFile() {
-        String userDetails = "";
-        for (User user : users) {
-            if (user.getID() != 0) userDetails += user.getDetails();
-        }
-        fileHandler.writeToFile(fileName, false, userDetails);
-    }
-
-    // Get the next ID to assign
+    // Get next available ID
     public static int getNextID() {
         return ++ID;
     }
 
-    // Return the list of all users
+    // Get all users loaded in memory
     public static ArrayList<User> getUsers() {
         return users;
     }
+
 }

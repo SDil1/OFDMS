@@ -1,29 +1,36 @@
 package com.example.onlinefooddeliverysystem.services;
 import com.example.onlinefooddeliverysystem.models.Review;
-import com.example.onlinefooddeliverysystem.util.fileHandler;
+import com.example.onlinefooddeliverysystem.util.dbManager;
+import java.sql.*;
 
 import java.util.ArrayList;
 
 public class ReviewManager {
     private static ArrayList<Review> reviews = null;
-    private static final String fileName = "reviews.txt";
     private static int reviewID = 0;
 
     public static void readReviews() {
         if (reviews != null) return;
 
         reviews = new ArrayList<>();
-        String[] dataArr = fileHandler.readFromFile(fileName);
         int lastID = 0;
 
-        for (String data : dataArr) {
-            String[] parts = data.split(",");
-            lastID = Integer.parseInt(parts[0]);
-            int userId = Integer.parseInt(parts[1]);
-            int foodId = Integer.parseInt(parts[2]);
-            String comment = parts[3];
+        try (Connection conn = dbManager.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM review")) {
 
-            reviews.add(new Review(lastID, userId, foodId, comment));
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                int userId = rs.getInt("user_id");
+                int foodId = rs.getInt("food_id");
+                String comment = rs.getString("comment");
+
+                reviews.add(new Review(id, userId, foodId, comment));
+                lastID = id;
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
 
         reviewID = lastID;
@@ -33,7 +40,17 @@ public class ReviewManager {
         int id = getNextID();
         Review review = new Review(id, userId, foodId, comment);
         reviews.add(review);
-        fileHandler.writeToFile(fileName, true, review.getDetails());
+
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("INSERT INTO review (id, user_id, food_id, comment) VALUES (?, ?, ?, ?)")) {
+            stmt.setInt(1, id);
+            stmt.setInt(2, userId);
+            stmt.setInt(3, foodId);
+            stmt.setString(4, comment);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void delete(int reviewId) {
@@ -44,9 +61,17 @@ public class ReviewManager {
                 break;
             }
         }
+
         if (toRemove != null) {
             reviews.remove(toRemove);
-            saveReviewsToFile();
+
+            try (Connection conn = dbManager.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement("DELETE FROM review WHERE id = ?")) {
+                stmt.setInt(1, reviewId);
+                stmt.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -57,15 +82,15 @@ public class ReviewManager {
                 break;
             }
         }
-        saveReviewsToFile();
-    }
 
-    public static void saveReviewsToFile() {
-        String data = "";
-        for (Review r : reviews) {
-            data += r.getDetails();
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("UPDATE review SET comment = ? WHERE id = ?")) {
+            stmt.setString(1, newComment);
+            stmt.setInt(2, reviewId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-        fileHandler.writeToFile(fileName, false, data);
     }
 
     public static int getNextID() {
