@@ -10,8 +10,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class AdminManager {
+    private static ArrayList<Admin> admins = new ArrayList<>();
+
     public static ArrayList<Admin>getAdmins(){
-        ArrayList<Admin> admins= new ArrayList<>();
 
         try (Connection conn = dbManager.getConnection()) {
             String query = "SELECT*FROM admins";
@@ -34,6 +35,11 @@ public class AdminManager {
         }
         return admins;
     }
+    public static ArrayList<Admin> view() {
+        return admins;
+    }
+
+
 
     public static Admin findAdmin(int id) {
         try (Connection conn = dbManager.getConnection()) {
@@ -55,9 +61,9 @@ public class AdminManager {
         }
         return null;
     }
-    public static Admin addAdmin(int id,String name,int age,String mail,String password){
-        try(Connection conn= dbManager.getConnection()){
-            String query ="INSERT INTO admin(id,name,age,mail,password) VALUES(?,?,?,?,?)";
+    public static void addAdmin(int id, String name, int age, String mail, String password) {
+        try (Connection conn = dbManager.getConnection()) {
+            String query = "INSERT INTO admins (id, name, age, mail, password) VALUES (?, ?, ?, ?, ?)";
             PreparedStatement stmt = conn.prepareStatement(query);
             stmt.setInt(1, id);
             stmt.setString(2, name);
@@ -95,6 +101,7 @@ public class AdminManager {
         }catch(Exception e ){
             e.printStackTrace();
         }
+
 
 
     }

@@ -36,8 +36,9 @@ public class Admin extends Driver {
     public void setPassword(String password) {
         this.password = password;
     }
+
     public String getDetails() {
-        return ID+","+name+","+age+","+mail+","+password+"\n";
+        return getID() + "," + getName() + "," + getAge() + "," + mail + "," + password + "\n";
     }
 }
 

@@ -46,6 +46,6 @@ public class Driver {
     }
     // implementing get details method
     public String getDetails(){
-        return ID+","+name+","+age+"\n";
+        return getID() + "," + getName() + "," + getAge()+"\n";
     }
 }
