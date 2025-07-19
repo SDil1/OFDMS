@@ -31,7 +31,7 @@ public class Update extends HttpServlet {
             user.setAge(age);
             user.setPassword(password);
             user.setMail(mail);
-            UserManager.saveUsersToFile();
+            UserManager.updateUser(user);
             response.sendRedirect("Pages/User/profile.jsp?update=success");
         } else {
             response.sendRedirect("Pages/User/profile.jsp?update=fail");

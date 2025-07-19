@@ -14,7 +14,7 @@ import java.io.IOException;
 public class LoginAdmin extends HttpServlet {
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        AdminManager.readAdmins();
+        AdminManager.getAdmins();
         String email = request.getParameter("email");
         String password = request.getParameter("password");
 

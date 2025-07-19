@@ -95,6 +95,23 @@ public class UserManager {
             }
         }
     }
+    public static void updateUser(User user) {
+        try (Connection con = dbManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "UPDATE users SET name=?, age=?, password=?, mail=? WHERE id=?")) {
+
+            ps.setString(1, user.getName());
+            ps.setInt(2, user.getAge());
+            ps.setString(3, user.getPassword());
+            ps.setString(4, user.getMail());
+            ps.setInt(5, user.getID());
+
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     // Get next available ID
     public static int getNextID() {
