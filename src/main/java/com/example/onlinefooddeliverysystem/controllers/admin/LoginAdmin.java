@@ -14,21 +14,26 @@ import java.io.IOException;
 public class LoginAdmin extends HttpServlet {
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        AdminManager.getAdmins();
+        AdminManager.getAdmins();  // Make sure admins are loaded
+
         String email = request.getParameter("email");
         String password = request.getParameter("password");
 
-        // admin login check
         Admin loggedAdmin = null;
+
         for (Admin admin : AdminManager.getAdmins()) {
-            if(admin.getMail().equalsIgnoreCase(email) && admin.getPassword().equals(password)) {
+            if (admin.getMail().equalsIgnoreCase(email) && admin.getPassword().equals(password)) {
                 loggedAdmin = admin;
+                break;
             }
         }
 
-        HttpSession session = request.getSession();
-        session.setAttribute("loggedAdmin", loggedAdmin);
-
-        response.sendRedirect("pages/food-item/admin-view.jsp");
+        if (loggedAdmin != null) {
+            HttpSession session = request.getSession();
+            session.setAttribute("loggedAdmin", loggedAdmin);
+            response.sendRedirect("pages/admin/admin-view.jsp");
+        } else {
+            response.sendRedirect("pages/admin/login.jsp");
+        }
     }
 }
