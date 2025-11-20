@@ -26,8 +26,8 @@ FoodDeliverySystem/
 
 
 ## How to Run:
-1. Clone the repository:
-   ```bash
+1. Clone the repository: 
+    ``` https://github.com/SDil1/OFDMS.git ```
    
 2. Open the project in IntelliJ IDEA.
 3. Run the Main class or deploy to a local web server to test the system.
